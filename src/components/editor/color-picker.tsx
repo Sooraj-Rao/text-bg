@@ -16,7 +16,7 @@ interface ColorPickerProps {
   attribute: string;
   label: string;
   currentColor: string;
-  handleAttributeChange: (attribute: string, value: any) => void;
+  handleAttributeChange: (attribute: string, value: string) => void;
 }
 
 const ColorPicker: React.FC<ColorPickerProps> = ({

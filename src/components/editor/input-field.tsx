@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
 interface InputFieldProps {
@@ -13,7 +12,6 @@ interface InputFieldProps {
 
 const InputField: React.FC<InputFieldProps> = ({
   attribute,
-  label,
   currentValue,
   handleAttributeChange,
 }) => {

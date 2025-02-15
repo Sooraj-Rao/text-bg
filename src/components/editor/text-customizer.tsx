@@ -23,26 +23,32 @@ import FontFamilyPicker from "./font-picker";
 import ColorPicker from "./color-picker";
 import SliderField from "./slider-field";
 
+interface TextSet {
+  id: number;
+  text: string;
+  fontFamily: string;
+  top: number;
+  left: number;
+  color: string;
+  fontSize: number;
+  fontWeight: number;
+  opacity: number;
+  rotation: number;
+  shadowColor: string;
+  shadowSize: number;
+  tiltX: number;
+  tiltY: number;
+}
+
 interface TextCustomizerProps {
-  textSet: {
-    id: number;
-    text: string;
-    fontFamily: string;
-    top: number;
-    left: number;
-    color: string;
-    fontSize: number;
-    fontWeight: number;
-    opacity: number;
-    rotation: number;
-    shadowColor: string;
-    shadowSize: number;
-    tiltX: number;
-    tiltY: number;
-  };
-  handleAttributeChange: (id: number, attribute: string, value: any) => void;
+  textSet: TextSet;
+  handleAttributeChange: (
+    id: number,
+    attribute: string,
+    value: string | number
+  ) => void;
   removeTextSet: (id: number) => void;
-  duplicateTextSet: (textSet: any) => void;
+  duplicateTextSet: (textSet: TextSet) => void;
   userId: string;
 }
 
@@ -66,7 +72,7 @@ const TextCustomizer: React.FC<TextCustomizerProps> = ({
     { id: "rotation", icon: <RotateCw size={20} />, label: "Rotate" },
     { id: "tiltX", icon: <ArrowLeftRight size={20} />, label: "Tilt X" },
     { id: "tiltY", icon: <ArrowUpDown size={20} />, label: "Tilt Y" },
-  ];
+  ] as const;
 
   return (
     <AccordionItem value={`item-${textSet.id}`}>

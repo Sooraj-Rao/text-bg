@@ -2,17 +2,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
+interface TextStyle {
+  fontSize: number;
+  color: string;
+  opacity: number;
+  x: number;
+  y: number;
+}
+
 interface TextEditorProps {
   text: string;
   setText: (text: string) => void;
-  textStyle: {
-    fontSize: number;
-    color: string;
-    opacity: number;
-    x: number;
-    y: number;
-  };
-  setTextStyle: (style: any) => void;
+  textStyle: TextStyle;
+  setTextStyle: (style: TextStyle) => void;
 }
 
 export default function TextEditor({
