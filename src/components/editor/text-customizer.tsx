@@ -1,44 +1,28 @@
-import React, { useState } from "react";
-import { Button } from "../ui/button";
+import type React from "react";
 import {
+  Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
-  Move,
-  Text,
-  Bold,
-  RotateCw,
+  Copy,
+  Trash2,
+  Type,
   Palette,
-  LightbulbIcon,
-  CaseSensitive,
-  TypeOutline,
+  Move,
+  RotateCw,
   ArrowLeftRight,
   ArrowUpDown,
+  Text,
+  Bold,
+  Droplet,
 } from "lucide-react";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import InputField from "./input-field";
-import FontFamilyPicker from "./font-picker";
-import ColorPicker from "./color-picker";
-import SliderField from "./slider-field";
-
-interface TextSet {
-  id: number;
-  text: string;
-  fontFamily: string;
-  top: number;
-  left: number;
-  color: string;
-  fontSize: number;
-  fontWeight: number;
-  opacity: number;
-  rotation: number;
-  shadowColor: string;
-  shadowSize: number;
-  tiltX: number;
-  tiltY: number;
-}
+import type { TextSet } from "@/types/editor";
 
 interface TextCustomizerProps {
   textSet: TextSet;
@@ -49,339 +33,152 @@ interface TextCustomizerProps {
   ) => void;
   removeTextSet: (id: number) => void;
   duplicateTextSet: (textSet: TextSet) => void;
-  userId: string;
 }
+
+const ICONS: Record<string, JSX.Element> = {
+  left: <Move className="h-4 w-4 text-gray-400 mr-2" />,
+  top: <Move className="h-4 w-4 text-gray-400 mr-2" />,
+  fontSize: <Text className="h-4 w-4 text-gray-400 mr-2" />,
+  bold: <Bold className="h-4 w-4 text-gray-400 mr-2" />,
+  opacity: <Droplet className="h-4 w-4 text-gray-400 mr-2" />,
+  rotation: <RotateCw className="h-4 w-4 text-gray-400 mr-2" />,
+  tiltX: <ArrowLeftRight className="h-4 w-4 text-gray-400 mr-2" />,
+  tiltY: <ArrowUpDown className="h-4 w-4 text-gray-400 mr-2" />,
+};
 
 const TextCustomizer: React.FC<TextCustomizerProps> = ({
   textSet,
   handleAttributeChange,
   removeTextSet,
   duplicateTextSet,
-  userId,
 }) => {
-  const [activeControl, setActiveControl] = useState<string | null>(null);
-
-  const controls = [
-    { id: "text", icon: <CaseSensitive size={20} />, label: "Text" },
-    { id: "fontFamily", icon: <TypeOutline size={20} />, label: "Font" },
-    { id: "color", icon: <Palette size={20} />, label: "Color" },
-    { id: "position", icon: <Move size={20} />, label: "Position" },
-    { id: "fontSize", icon: <Text size={20} />, label: "Size" },
-    { id: "fontWeight", icon: <Bold size={20} />, label: "Weight" },
-    { id: "opacity", icon: <LightbulbIcon size={20} />, label: "Opacity" },
-    { id: "rotation", icon: <RotateCw size={20} />, label: "Rotate" },
-    { id: "tiltX", icon: <ArrowLeftRight size={20} />, label: "Tilt X" },
-    { id: "tiltY", icon: <ArrowUpDown size={20} />, label: "Tilt Y" },
-  ] as const;
-
   return (
-    <AccordionItem value={`item-${textSet.id}`}>
-      <AccordionTrigger>{textSet.text}</AccordionTrigger>
-      <AccordionContent>
-        {/* Mobile Controls */}
-        <div className="md:hidden">
-          <ScrollArea className="w-full">
-            <div className="flex w-max gap-1 mb-2 p-1">
-              {controls.map((control) => (
-                <button
-                  key={control.id}
-                  onClick={() =>
-                    setActiveControl(
-                      activeControl === control.id ? null : control.id
-                    )
-                  }
-                  className={`flex flex-col items-center justify-center min-w-[4.2rem] h-[4.2rem] rounded-lg ${
-                    activeControl === control.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary"
-                  }`}
-                >
-                  {control.icon}
-                  <span className="text-xs mt-1">{control.label}</span>
-                </button>
-              ))}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-
+    <Accordion
+      type="single"
+      collapsible
+      className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl shadow-sm"
+    >
+      <AccordionItem value={`item-${textSet.id}`}>
+        <AccordionTrigger className="px-4 py-3 text-sm font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-t-xl">
+          {textSet.text}
+        </AccordionTrigger>
+        <AccordionContent className="p-4 space-y-5 bg-white dark:bg-gray-900 rounded-b-xl">
+          {/* Text Input */}
           <div>
-            {activeControl === "text" && (
-              <InputField
-                attribute="text"
-                label="Text"
-                currentValue={textSet.text}
-                handleAttributeChange={(attribute, value) =>
-                  handleAttributeChange(textSet.id, attribute, value)
+            <Label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              Text
+            </Label>
+            <div className="flex items-center mt-1">
+              <Type className="h-4 w-4 text-gray-400 mr-2" />
+              <Input
+                value={textSet.text}
+                onChange={(e) =>
+                  handleAttributeChange(textSet.id, "text", e.target.value)
                 }
+                className="flex-grow"
               />
-            )}
-
-            {activeControl === "fontFamily" && (
-              <FontFamilyPicker
-                attribute="fontFamily"
-                currentFont={textSet.fontFamily}
-                handleAttributeChange={(attribute, value) =>
-                  handleAttributeChange(textSet.id, attribute, value)
-                }
-                userId={userId}
-              />
-            )}
-
-            {activeControl === "color" && (
-              <ColorPicker
-                attribute="color"
-                label="Text Color"
-                currentColor={textSet.color}
-                handleAttributeChange={(attribute, value) =>
-                  handleAttributeChange(textSet.id, attribute, value)
-                }
-              />
-            )}
-
-            {activeControl === "position" && (
-              <div className="space-y-4">
-                <SliderField
-                  attribute="left"
-                  label="X Position"
-                  min={-200}
-                  max={200}
-                  step={1}
-                  currentValue={textSet.left}
-                  handleAttributeChange={(attribute, value) =>
-                    handleAttributeChange(textSet.id, attribute, value)
-                  }
-                />
-                <SliderField
-                  attribute="top"
-                  label="Y Position"
-                  min={-100}
-                  max={100}
-                  step={1}
-                  currentValue={textSet.top}
-                  handleAttributeChange={(attribute, value) =>
-                    handleAttributeChange(textSet.id, attribute, value)
-                  }
-                />
-              </div>
-            )}
-
-            {activeControl === "fontSize" && (
-              <SliderField
-                attribute="fontSize"
-                label="Text Size"
-                min={10}
-                max={800}
-                step={1}
-                currentValue={textSet.fontSize}
-                handleAttributeChange={(attribute, value) =>
-                  handleAttributeChange(textSet.id, attribute, value)
-                }
-              />
-            )}
-
-            {activeControl === "fontWeight" && (
-              <SliderField
-                attribute="fontWeight"
-                label="Font Weight"
-                min={100}
-                max={900}
-                step={100}
-                currentValue={textSet.fontWeight}
-                handleAttributeChange={(attribute, value) =>
-                  handleAttributeChange(textSet.id, attribute, value)
-                }
-              />
-            )}
-
-            {activeControl === "opacity" && (
-              <SliderField
-                attribute="opacity"
-                label="Text Opacity"
-                min={0}
-                max={1}
-                step={0.01}
-                currentValue={textSet.opacity}
-                handleAttributeChange={(attribute, value) =>
-                  handleAttributeChange(textSet.id, attribute, value)
-                }
-              />
-            )}
-
-            {activeControl === "rotation" && (
-              <SliderField
-                attribute="rotation"
-                label="Rotation"
-                min={-360}
-                max={360}
-                step={1}
-                currentValue={textSet.rotation}
-                handleAttributeChange={(attribute, value) =>
-                  handleAttributeChange(textSet.id, attribute, value)
-                }
-              />
-            )}
-
-            {activeControl === "tiltX" && (
-              <SliderField
-                attribute="tiltX"
-                label="Horizontal Tilt"
-                min={-45}
-                max={45}
-                step={1}
-                currentValue={textSet.tiltX}
-                handleAttributeChange={(attribute, value) =>
-                  handleAttributeChange(textSet.id, attribute, value)
-                }
-              />
-            )}
-
-            {activeControl === "tiltY" && (
-              <SliderField
-                attribute="tiltY"
-                label="Vertical Tilt"
-                min={-45}
-                max={45}
-                step={1}
-                currentValue={textSet.tiltY}
-                handleAttributeChange={(attribute, value) =>
-                  handleAttributeChange(textSet.id, attribute, value)
-                }
-              />
-            )}
+            </div>
           </div>
-        </div>
 
-        {/* Desktop Layout */}
-        <div className="hidden md:block">
-          <InputField
-            attribute="text"
-            label="Text"
-            currentValue={textSet.text}
-            handleAttributeChange={(attribute, value) =>
-              handleAttributeChange(textSet.id, attribute, value)
-            }
-          />
-          <FontFamilyPicker
-            attribute="fontFamily"
-            currentFont={textSet.fontFamily}
-            handleAttributeChange={(attribute, value) =>
-              handleAttributeChange(textSet.id, attribute, value)
-            }
-            userId={userId}
-          />
-          <div className="flex flex-row items-start justify-start gap-10 w-full">
-            <ColorPicker
-              attribute="color"
-              label="Text Color"
-              currentColor={textSet.color}
-              handleAttributeChange={(attribute, value) =>
-                handleAttributeChange(textSet.id, attribute, value)
+          {/* Font Selection */}
+          <div>
+            <Label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              Font
+            </Label>
+            <select
+              value={textSet.fontFamily}
+              onChange={(e) =>
+                handleAttributeChange(textSet.id, "fontFamily", e.target.value)
               }
-            />
+              className="w-full mt-1 rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:ring focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+            >
+              <option value="Inter">Inter</option>
+              <option value="Arial">Arial</option>
+              <option value="Helvetica">Helvetica</option>
+              <option value="Times New Roman">Times New Roman</option>
+              <option value="Courier New">Courier New</option>
+            </select>
           </div>
-          <SliderField
-            attribute="left"
-            label="X Position"
-            min={-200}
-            max={200}
-            step={1}
-            currentValue={textSet.left}
-            handleAttributeChange={(attribute, value) =>
-              handleAttributeChange(textSet.id, attribute, value)
-            }
-          />
-          <SliderField
-            attribute="top"
-            label="Y Position"
-            min={-100}
-            max={100}
-            step={1}
-            currentValue={textSet.top}
-            handleAttributeChange={(attribute, value) =>
-              handleAttributeChange(textSet.id, attribute, value)
-            }
-          />
-          <SliderField
-            attribute="fontSize"
-            label="Text Size"
-            min={10}
-            max={800}
-            step={1}
-            currentValue={textSet.fontSize}
-            handleAttributeChange={(attribute, value) =>
-              handleAttributeChange(textSet.id, attribute, value)
-            }
-          />
-          <SliderField
-            attribute="fontWeight"
-            label="Font Weight"
-            min={100}
-            max={900}
-            step={100}
-            currentValue={textSet.fontWeight}
-            handleAttributeChange={(attribute, value) =>
-              handleAttributeChange(textSet.id, attribute, value)
-            }
-          />
-          <SliderField
-            attribute="opacity"
-            label="Text Opacity"
-            min={0}
-            max={1}
-            step={0.01}
-            currentValue={textSet.opacity}
-            handleAttributeChange={(attribute, value) =>
-              handleAttributeChange(textSet.id, attribute, value)
-            }
-          />
-          <SliderField
-            attribute="rotation"
-            label="Rotation"
-            min={-360}
-            max={360}
-            step={1}
-            currentValue={textSet.rotation}
-            handleAttributeChange={(attribute, value) =>
-              handleAttributeChange(textSet.id, attribute, value)
-            }
-          />
-          <SliderField
-            attribute="tiltX"
-            label="Horizontal Tilt"
-            min={-45}
-            max={45}
-            step={1}
-            currentValue={textSet.tiltX}
-            handleAttributeChange={(attribute, value) =>
-              handleAttributeChange(textSet.id, attribute, value)
-            }
-          />
-          <SliderField
-            attribute="tiltY"
-            label="Vertical Tilt"
-            min={-45}
-            max={45}
-            step={1}
-            currentValue={textSet.tiltY}
-            handleAttributeChange={(attribute, value) =>
-              handleAttributeChange(textSet.id, attribute, value)
-            }
-          />
-        </div>
 
-        <div className="flex flex-row gap-2 my-8">
-          <Button onClick={() => duplicateTextSet(textSet)}>
-            Duplicate Text Set
-          </Button>
-          <Button
-            onClick={() => removeTextSet(textSet.id)}
-            variant="destructive"
-          >
-            Remove Text Set
-          </Button>
-        </div>
-      </AccordionContent>
-    </AccordionItem>
+          {/* Color Picker */}
+          <div>
+            <Label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              Color
+            </Label>
+            <div className="flex items-center mt-1">
+              <Palette className="h-4 w-4 text-gray-400 mr-2" />
+              <Input
+                type="color"
+                value={textSet.color}
+                onChange={(e) =>
+                  handleAttributeChange(textSet.id, "color", e.target.value)
+                }
+                className="w-full h-8 p-1 rounded-md"
+              />
+            </div>
+          </div>
+
+          {[
+            "left",
+            "top",
+            "fontSize",
+            "bold",
+            "opacity",
+            "rotation",
+            "tiltX",
+            "tiltY",
+          ].map((attr) => (
+            <div key={attr} className=" ">
+              <div className="flex items-center capitalize">
+                {ICONS[attr]}
+                <Label className="text-xs font-medium text-gray-500 dark:text-gray-400 flex-grow">
+                  {attr.replace(/([A-Z])/g, " $1").trim()}
+                </Label>
+                {textSet[attr]}
+              </div>
+              <Slider
+                min={
+                  attr === "bold"
+                    ? 100
+                    : attr === "opacity"
+                    ? 0
+                    : attr === "fontSize"
+                    ? 0
+                    : -180
+                }
+                max={attr === "bold" ? 900 : attr === "opacity" ? 1 : 180}
+                step={attr === "bold" ? 100 : attr === "opacity" ? 0.1 : 1}
+                value={[textSet[attr]]}
+                onValueChange={(value) =>
+                  handleAttributeChange(textSet.id, attr, value[0])
+                }
+                className="mt-2"
+              />
+            </div>
+          ))}
+
+          {/* Actions */}
+          <div className="flex space-x-2 mt-4">
+            <Button
+              onClick={() => duplicateTextSet(textSet)}
+              size="sm"
+              variant="outline"
+              className="flex-1"
+            >
+              <Copy className="mr-2 h-4 w-4" /> Duplicate
+            </Button>
+            <Button
+              onClick={() => removeTextSet(textSet.id)}
+              size="sm"
+              variant="destructive"
+              className="flex-1"
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Remove
+            </Button>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 };
 

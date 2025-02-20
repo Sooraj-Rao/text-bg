@@ -8,7 +8,6 @@ import { Accordion } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import TextCustomizer from "@/components/editor/text-customizer";
 import { PlusIcon, ReloadIcon } from "@radix-ui/react-icons";
-import { removeBackground } from "@imgly/background-removal";
 
 interface TextSet {
   id: number;
@@ -18,7 +17,7 @@ interface TextSet {
   left: number;
   color: string;
   fontSize: number;
-  fontWeight: number;
+  bold: number;
   opacity: number;
   shadowColor: string;
   shadowSize: number;
@@ -26,8 +25,6 @@ interface TextSet {
   tiltX: number;
   tiltY: number;
 }
-
-
 
 const Page = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -52,15 +49,21 @@ const Page = () => {
     if (file) {
       const imageUrl = URL.createObjectURL(file);
       setSelectedImage(imageUrl);
-      await setupImage(imageUrl);
+      await setupImage(file);
     }
   };
 
-  const setupImage = async (imageUrl: string) => {
+  const setupImage = async (file: File) => {
     try {
-      const imageBlob = await removeBackground(imageUrl);
-      const url = URL.createObjectURL(imageBlob);
-      setRemovedBgImageUrl(url);
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("https://rembg.sj1.xyz/remove-bg/file/", {
+        method: "POST",
+        body: formData,
+      });
+      const blob = await response.blob();
+      const imageUrl = URL.createObjectURL(blob);
+      setRemovedBgImageUrl(imageUrl);
       setIsImageSetupDone(true);
     } catch (error) {
       console.error(error);
@@ -79,7 +82,7 @@ const Page = () => {
         left: 0,
         color: "white",
         fontSize: 200,
-        fontWeight: 800,
+        bold: 800,
         opacity: 1,
         shadowColor: "rgba(0, 0, 0, 0.8)",
         shadowSize: 4,
@@ -109,6 +112,78 @@ const Page = () => {
     setTextSets((prev) => prev.filter((set) => set.id !== id));
   };
 
+  // const saveCompositeImage = () => {
+  //   if (!canvasRef.current || !isImageSetupDone) return;
+
+  //   const canvas = canvasRef.current;
+  //   const ctx = canvas.getContext("2d");
+  //   if (!ctx) return;
+
+  //   const bgImg = new window.Image();
+  //   bgImg.crossOrigin = "anonymous";
+  //   bgImg.onload = () => {
+  //     canvas.width = bgImg.width;
+  //     canvas.height = bgImg.height;
+
+  //     ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+
+  //     textSets.forEach((textSet) => {
+  //       ctx.save();
+
+  //       ctx.font = `${textSet.bold} ${textSet.fontSize * 1.2}px ${
+  //         textSet.fontFamily
+  //       }`;
+  //       ctx.fillStyle = textSet.color;
+  //       ctx.globalAlpha = textSet.opacity;
+  //       ctx.textAlign = "center";
+  //       ctx.textBaseline = "middle";
+
+  //       const x = (canvas.width * (textSet.left + 50)) / 100;
+  //       const y = (canvas.height * (50 - textSet.top)) / 100;
+
+  //       ctx.translate(x, y);
+
+  //       const tiltXRad = (-textSet.tiltX * Math.PI) / 180;
+  //       const tiltYRad = (-textSet.tiltY * Math.PI) / 180;
+
+  //       ctx.transform(
+  //         Math.cos(tiltYRad),
+  //         Math.sin(0),
+  //         -Math.sin(0),
+  //         Math.cos(tiltXRad),
+  //         0,
+  //         0
+  //       );
+
+  //       ctx.rotate((textSet.rotation * Math.PI) / 180);
+
+  //       ctx.fillText(textSet.text, 0, 0);
+  //       ctx.restore();
+  //     });
+
+  //     if (removedBgImageUrl) {
+  //       const removedBgImg = new window.Image();
+  //       removedBgImg.crossOrigin = "anonymous";
+  //       removedBgImg.onload = () => {
+  //         ctx.drawImage(removedBgImg, 0, 0, canvas.width, canvas.height);
+  //         triggerDownload();
+  //       };
+  //       removedBgImg.src = removedBgImageUrl;
+  //     } else {
+  //       triggerDownload();
+  //     }
+  //   };
+  //   bgImg.src = selectedImage || "";
+
+  //   function triggerDownload() {
+  //     const dataUrl = canvas.toDataURL("image/png");
+  //     const link = document.createElement("a");
+  //     link.download = `1.png`;
+  //     link.href = dataUrl;
+  //     link.click();
+  //   }
+  // };
+
   const saveCompositeImage = () => {
     if (!canvasRef.current || !isImageSetupDone) return;
 
@@ -122,38 +197,39 @@ const Page = () => {
       canvas.width = bgImg.width;
       canvas.height = bgImg.height;
 
+      // Draw background image
       ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
 
       textSets.forEach((textSet) => {
         ctx.save();
 
-        ctx.font = `${textSet.fontWeight} ${textSet.fontSize * 2.5}px ${
-          textSet.fontFamily
-        }`;
+        // Set basic text properties
+        const fontSize = textSet.fontSize;
+        ctx.font = `${textSet.bold} ${fontSize}px ${textSet.fontFamily}`;
         ctx.fillStyle = textSet.color;
         ctx.globalAlpha = textSet.opacity;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
+        // Calculate center position
         const x = (canvas.width * (textSet.left + 50)) / 100;
         const y = (canvas.height * (50 - textSet.top)) / 100;
 
+        // Transform in the same order as CSS
         ctx.translate(x, y);
 
-        const tiltXRad = (-textSet.tiltX * Math.PI) / 180;
-        const tiltYRad = (-textSet.tiltY * Math.PI) / 180;
-
+        // Apply rotations in degrees (matching CSS exactly)
+        ctx.rotate((-textSet.rotation * Math.PI) / 180);
         ctx.transform(
-          Math.cos(tiltYRad),
-          Math.sin(0),
-          -Math.sin(0),
-          Math.cos(tiltXRad),
-          0,
-          0
+          1, // Horizontal scaling
+          textSet.tiltX / 50, // Horizontal skewing
+          textSet.tiltY / 50, // Vertical skewing
+          1, // Vertical scaling
+          0, // Horizontal translation
+          0 // Vertical translation
         );
 
-        ctx.rotate((textSet.rotation * Math.PI) / 180);
-
+        // Draw the text
         ctx.fillText(textSet.text, 0, 0);
         ctx.restore();
       });
@@ -163,23 +239,23 @@ const Page = () => {
         removedBgImg.crossOrigin = "anonymous";
         removedBgImg.onload = () => {
           ctx.drawImage(removedBgImg, 0, 0, canvas.width, canvas.height);
-          triggerDownload();
+          triggerDownload(canvas);
         };
         removedBgImg.src = removedBgImageUrl;
       } else {
-        triggerDownload();
+        triggerDownload(canvas);
       }
     };
     bgImg.src = selectedImage || "";
-
-    function triggerDownload() {
-      const dataUrl = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = "text-behind-image.png";
-      link.href = dataUrl;
-      link.click();
-    }
   };
+
+  function triggerDownload(canvas) {
+    const dataUrl = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.download = `edited_image.png`;
+    link.href = dataUrl;
+    link.click();
+  }
 
   return (
     <>
@@ -255,7 +331,7 @@ const Page = () => {
                         color: textSet.color,
                         textAlign: "center",
                         fontSize: `${textSet.fontSize}px`,
-                        fontWeight: textSet.fontWeight,
+                        fontWeight: textSet.bold,
                         fontFamily: textSet.fontFamily,
                         opacity: textSet.opacity,
                         transformStyle: "preserve-3d",
@@ -289,7 +365,6 @@ const Page = () => {
                       handleAttributeChange={handleAttributeChange}
                       removeTextSet={removeTextSet}
                       duplicateTextSet={duplicateTextSet}
-                      userId=""
                     />
                   ))}
                 </Accordion>
