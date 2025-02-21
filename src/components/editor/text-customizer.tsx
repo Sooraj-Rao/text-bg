@@ -62,7 +62,7 @@ const TextCustomizer: React.FC<TextCustomizerProps> = ({
         <AccordionTrigger className="px-4 py-3 text-sm font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-t-xl">
           {textSet.text}
         </AccordionTrigger>
-        <AccordionContent className="p-4 space-y-5 bg-white dark:bg-gray-900 rounded-b-xl">
+        <AccordionContent className="p-4 space-y-5 bg-gray-50 shadow-md border dark:bg-gray-900 rounded-b-xl">
           {/* Text Input */}
           <div>
             <Label className="text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -146,7 +146,15 @@ const TextCustomizer: React.FC<TextCustomizerProps> = ({
                     ? 0
                     : -180
                 }
-                max={attr === "bold" ? 900 : attr === "opacity" ? 1 : 180}
+                max={
+                  attr === "bold"
+                    ? 900
+                    : attr === "opacity"
+                    ? 1
+                    : attr === "fontSize"
+                    ? 300
+                    : 180
+                }
                 step={attr === "bold" ? 100 : attr === "opacity" ? 0.1 : 1}
                 value={[textSet[attr]]}
                 onValueChange={(value) =>

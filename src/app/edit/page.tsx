@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import type React from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Accordion } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import TextCustomizer from "@/components/editor/text-customizer";
-import { PlusIcon, ReloadIcon } from "@radix-ui/react-icons";
+import { PlusIcon, UploadIcon, DownloadIcon } from "lucide-react";
 
 interface TextSet {
   id: number;
@@ -33,10 +34,16 @@ const Page = () => {
     null
   );
   const [textSets, setTextSets] = useState<TextSet[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleUploadImage = () => {
+    if (selectedImage) {
+      setSelectedImage(null);
+      setTextSets([]);
+      setRemovedBgImageUrl(null);
+    }
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -49,6 +56,8 @@ const Page = () => {
     if (file) {
       const imageUrl = URL.createObjectURL(file);
       setSelectedImage(imageUrl);
+      setIsImageSetupDone(false);
+      setUploadProgress(0);
       await setupImage(file);
     }
   };
@@ -57,16 +66,38 @@ const Page = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
+
       const response = await fetch("https://rembg.sj1.xyz/remove-bg/file/", {
         method: "POST",
         body: formData,
       });
-      const blob = await response.blob();
+
+      const reader = response.body?.getReader();
+      const contentLength = response?.headers
+        ? +response?.headers?.get("Content-Length")
+        : 0;
+      let receivedLength = 0;
+      const chunks = [];
+
+      while (true && reader) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        chunks.push(value);
+        receivedLength += value.length;
+        setUploadProgress(Math.round((receivedLength / contentLength) * 100));
+      }
+
+      const blob = new Blob(chunks);
       const imageUrl = URL.createObjectURL(blob);
       setRemovedBgImageUrl(imageUrl);
       setIsImageSetupDone(true);
     } catch (error) {
       console.error(error);
+      setIsImageSetupDone(true);
     }
   };
 
@@ -76,12 +107,12 @@ const Page = () => {
       ...prev,
       {
         id: newId,
-        text: "edit",
+        text: "text",
         fontFamily: "Inter",
         top: 0,
         left: 0,
         color: "white",
-        fontSize: 200,
+        fontSize: 100,
         bold: 800,
         opacity: 1,
         shadowColor: "rgba(0, 0, 0, 0.8)",
@@ -112,78 +143,6 @@ const Page = () => {
     setTextSets((prev) => prev.filter((set) => set.id !== id));
   };
 
-  // const saveCompositeImage = () => {
-  //   if (!canvasRef.current || !isImageSetupDone) return;
-
-  //   const canvas = canvasRef.current;
-  //   const ctx = canvas.getContext("2d");
-  //   if (!ctx) return;
-
-  //   const bgImg = new window.Image();
-  //   bgImg.crossOrigin = "anonymous";
-  //   bgImg.onload = () => {
-  //     canvas.width = bgImg.width;
-  //     canvas.height = bgImg.height;
-
-  //     ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-
-  //     textSets.forEach((textSet) => {
-  //       ctx.save();
-
-  //       ctx.font = `${textSet.bold} ${textSet.fontSize * 1.2}px ${
-  //         textSet.fontFamily
-  //       }`;
-  //       ctx.fillStyle = textSet.color;
-  //       ctx.globalAlpha = textSet.opacity;
-  //       ctx.textAlign = "center";
-  //       ctx.textBaseline = "middle";
-
-  //       const x = (canvas.width * (textSet.left + 50)) / 100;
-  //       const y = (canvas.height * (50 - textSet.top)) / 100;
-
-  //       ctx.translate(x, y);
-
-  //       const tiltXRad = (-textSet.tiltX * Math.PI) / 180;
-  //       const tiltYRad = (-textSet.tiltY * Math.PI) / 180;
-
-  //       ctx.transform(
-  //         Math.cos(tiltYRad),
-  //         Math.sin(0),
-  //         -Math.sin(0),
-  //         Math.cos(tiltXRad),
-  //         0,
-  //         0
-  //       );
-
-  //       ctx.rotate((textSet.rotation * Math.PI) / 180);
-
-  //       ctx.fillText(textSet.text, 0, 0);
-  //       ctx.restore();
-  //     });
-
-  //     if (removedBgImageUrl) {
-  //       const removedBgImg = new window.Image();
-  //       removedBgImg.crossOrigin = "anonymous";
-  //       removedBgImg.onload = () => {
-  //         ctx.drawImage(removedBgImg, 0, 0, canvas.width, canvas.height);
-  //         triggerDownload();
-  //       };
-  //       removedBgImg.src = removedBgImageUrl;
-  //     } else {
-  //       triggerDownload();
-  //     }
-  //   };
-  //   bgImg.src = selectedImage || "";
-
-  //   function triggerDownload() {
-  //     const dataUrl = canvas.toDataURL("image/png");
-  //     const link = document.createElement("a");
-  //     link.download = `1.png`;
-  //     link.href = dataUrl;
-  //     link.click();
-  //   }
-  // };
-
   const saveCompositeImage = () => {
     if (!canvasRef.current || !isImageSetupDone) return;
 
@@ -197,13 +156,11 @@ const Page = () => {
       canvas.width = bgImg.width;
       canvas.height = bgImg.height;
 
-      // Draw background image
       ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
 
       textSets.forEach((textSet) => {
         ctx.save();
 
-        // Set basic text properties
         const fontSize = textSet.fontSize;
         ctx.font = `${textSet.bold} ${fontSize}px ${textSet.fontFamily}`;
         ctx.fillStyle = textSet.color;
@@ -211,25 +168,14 @@ const Page = () => {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
-        // Calculate center position
         const x = (canvas.width * (textSet.left + 50)) / 100;
         const y = (canvas.height * (50 - textSet.top)) / 100;
 
-        // Transform in the same order as CSS
         ctx.translate(x, y);
 
-        // Apply rotations in degrees (matching CSS exactly)
         ctx.rotate((-textSet.rotation * Math.PI) / 180);
-        ctx.transform(
-          1, // Horizontal scaling
-          textSet.tiltX / 50, // Horizontal skewing
-          textSet.tiltY / 50, // Vertical skewing
-          1, // Vertical scaling
-          0, // Horizontal translation
-          0 // Vertical translation
-        );
+        ctx.transform(1, textSet.tiltX / 50, textSet.tiltY / 50, 1, 0, 0);
 
-        // Draw the text
         ctx.fillText(textSet.text, 0, 0);
         ctx.restore();
       });
@@ -258,60 +204,33 @@ const Page = () => {
   }
 
   return (
-    <>
-      <script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1609710199882100"
-        crossOrigin="anonymous"
-      ></script>
-
-      <div className="flex flex-col h-screen">
-        <header className="flex flex-row items-center justify-between p-5 px-10">
-          <div className="flex gap-4 items-center">
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: "none" }}
-              onChange={handleFileChange}
-            />
-            <div className="flex items-center gap-5">
-              <div className="flex gap-2">
-                <Button onClick={handleUploadImage}>Upload image</Button>
-                {selectedImage && (
-                  <Button
-                    onClick={saveCompositeImage}
-                    className="hidden md:flex"
-                  >
-                    Save image
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
-        <Separator />
+    <div className="flex flex-col ">
+      <header className="flex items-center justify-between p-5 bg-gray-100">
+        <h1 className="text-2xl font-bold">Image Editor</h1>
+        <div className="flex gap-2">
+          <Button onClick={handleUploadImage}>
+            <UploadIcon className="mr-2 h-4 w-4" />
+            Upload Image
+          </Button>
+        </div>
+      </header>
+      <Separator />
+      <main className="flex-grow p-5">
         {selectedImage ? (
-          <div className="flex flex-col md:flex-row items-start justify-start gap-10 w-full h-screen px-10 mt-2">
-            <div className="flex flex-col items-start justify-start w-full md:w-1/2 gap-4">
-              <canvas ref={canvasRef} style={{ display: "none" }} />
-              <div className="flex items-center gap-2">
-                <Button onClick={saveCompositeImage} className="md:hidden">
-                  Save image
-                </Button>
-              </div>
-              <div className="min-h-[400px] w-[80%] p-4 border border-border rounded-lg relative overflow-hidden">
-                {isImageSetupDone ? (
-                  <Image
-                    src={selectedImage}
-                    alt="Uploaded"
-                    layout="fill"
-                    objectFit="contain"
-                    objectPosition="center"
-                  />
-                ) : (
-                  <span className="flex items-center w-full gap-2">
-                    <ReloadIcon className="animate-spin" /> Loading, please wait
-                  </span>
+          <div className="flex flex-col md:flex-row gap-10">
+            <div className="w-full md:w-1/2">
+              <div className="relative aspect-square border border-gray-200 rounded-lg overflow-hidden">
+                <Image
+                  src={selectedImage || "/placeholder.svg"}
+                  alt="Uploaded"
+                  layout="fill"
+                  objectFit="contain"
+                />
+                {!isImageSetupDone && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center text-white">
+                    <p className="mb-2">Processing image...</p>
+                    {uploadProgress}%
+                  </div>
                 )}
                 {isImageSetupDone &&
                   textSets.map((textSet) => (
@@ -322,12 +241,12 @@ const Page = () => {
                         top: `${50 - textSet.top}%`,
                         left: `${textSet.left + 50}%`,
                         transform: `
-                          translate(-50%, -50%) 
-                          rotate(${textSet.rotation}deg)
-                          perspective(1000px)
-                          rotateX(${textSet.tiltX}deg)
-                          rotateY(${textSet.tiltY}deg)
-                        `,
+                        translate(-50%, -50%) 
+                        rotate(${textSet.rotation}deg)
+                        perspective(1000px)
+                        rotateX(${textSet.tiltX}deg)
+                        rotateY(${textSet.tiltY}deg)
+                      `,
                         color: textSet.color,
                         textAlign: "center",
                         fontSize: `${textSet.fontSize}px`,
@@ -342,22 +261,30 @@ const Page = () => {
                   ))}
                 {removedBgImageUrl && (
                   <Image
-                    src={removedBgImageUrl}
+                    src={removedBgImageUrl || "/placeholder.svg"}
                     alt="Removed bg"
                     layout="fill"
                     objectFit="contain"
-                    objectPosition="center"
-                    className="absolute top-0 left-0 w-full h-full"
+                    className="absolute top-0 left-0"
                   />
                 )}
               </div>
             </div>
-            <div className="flex flex-col w-full md:w-1/2">
-              <Button variant="secondary" onClick={addNewTextSet}>
-                <PlusIcon className="mr-2" /> Add New Text Set
-              </Button>
-              <ScrollArea className="h-[calc(100vh-10rem)] p-2">
-                <Accordion type="single" collapsible className="w-full mt-2">
+            <div className="w-full md:w-1/2">
+              <div className=" flex  justify-between  items-center mb-3 ">
+                <Button variant="outline" onClick={addNewTextSet}>
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  Add New Text Set
+                </Button>
+                {selectedImage && (
+                  <Button onClick={saveCompositeImage}>
+                    <DownloadIcon className="mr-2 h-4 w-4" />
+                    Save Image
+                  </Button>
+                )}
+              </div>
+              <ScrollArea className="h-[calc(100vh-12rem)]">
+                <Accordion type="single" collapsible className=" space-y-3 ">
                   {textSets.map((textSet) => (
                     <TextCustomizer
                       key={textSet.id}
@@ -372,14 +299,31 @@ const Page = () => {
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center min-h-screen w-full">
-            <h2 className="text-xl font-semibold">
-              Welcome, get started by uploading an image!
-            </h2>
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <UploadIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h2 className="mt-2 text-xl font-semibold">
+                Upload an image to get started
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                PNG, JPG, GIF up to 10MB
+              </p>
+              <Button onClick={handleUploadImage} className="mt-4">
+                Choose file
+              </Button>
+            </div>
           </div>
         )}
-      </div>
-    </>
+      </main>
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        onChange={handleFileChange}
+        accept="image/*"
+      />
+      <canvas ref={canvasRef} style={{ display: "none" }} />
+    </div>
   );
 };
 
