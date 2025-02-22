@@ -27,7 +27,7 @@ interface TextSet {
   tiltY: number;
 }
 
-const Page = () => {
+export default function Page() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isImageSetupDone, setIsImageSetupDone] = useState<boolean>(false);
   const [removedBgImageUrl, setRemovedBgImageUrl] = useState<string | null>(
@@ -73,13 +73,15 @@ const Page = () => {
       });
 
       const reader = response.body?.getReader();
-      const contentLength = response?.headers
-        ? +response?.headers?.get("Content-Length")
-        : 0;
+      const contentLength = +(response.headers.get("Content-Length") ?? "0");
       let receivedLength = 0;
-      const chunks = [];
+      const chunks: Uint8Array[] = [];
 
-      while (true && reader) {
+      if (!reader) {
+        return null;
+      }
+
+      while (true) {
         const { done, value } = await reader.read();
 
         if (done) {
@@ -143,6 +145,65 @@ const Page = () => {
     setTextSets((prev) => prev.filter((set) => set.id !== id));
   };
 
+  // const saveCompositeImage = () => {
+  //   if (!canvasRef.current || !isImageSetupDone) return;
+
+  //   const canvas = canvasRef.current;
+  //   const ctx = canvas.getContext("2d");
+  //   if (!ctx) return;
+
+  //   const bgImg = new window.Image();
+  //   bgImg.crossOrigin = "anonymous";
+  //   bgImg.onload = () => {
+  //     canvas.width = bgImg.width;
+  //     canvas.height = bgImg.height;
+
+  //     ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+
+  //     textSets.forEach((textSet) => {
+  //       ctx.save();
+
+  //       const fontSize = textSet.fontSize;
+  //       ctx.font = `${textSet.bold} ${fontSize}px ${textSet.fontFamily}`;
+  //       ctx.fillStyle = textSet.color;
+  //       ctx.globalAlpha = textSet.opacity;
+  //       ctx.textAlign = "center";
+  //       ctx.textBaseline = "middle";
+
+  //       const x = (canvas.width * (textSet.left + 50)) / 100;
+  //       const y = (canvas.height * (50 - textSet.top)) / 100;
+
+  //       ctx.translate(x, y);
+
+  //       ctx.rotate((-textSet.rotation * Math.PI) / 180);
+  //       ctx.transform(
+  //         1,
+  //         Math.tan((textSet.tiltY * Math.PI) / 180),
+  //         Math.tan((textSet.tiltX * Math.PI) / 180),
+  //         1,
+  //         0,
+  //         0
+  //       );
+
+  //       ctx.fillText(textSet.text, 0, 0);
+  //       ctx.restore();
+  //     });
+
+  //     if (removedBgImageUrl) {
+  //       const removedBgImg = new window.Image();
+  //       removedBgImg.crossOrigin = "anonymous";
+  //       removedBgImg.onload = () => {
+  //         ctx.drawImage(removedBgImg, 0, 0, canvas.width, canvas.height);
+  //         triggerDownload(canvas);
+  //       };
+  //       removedBgImg.src = removedBgImageUrl;
+  //     } else {
+  //       triggerDownload(canvas);
+  //     }
+  //   };
+  //   bgImg.src = selectedImage || "";
+  // };
+
   const saveCompositeImage = () => {
     if (!canvasRef.current || !isImageSetupDone) return;
 
@@ -173,8 +234,21 @@ const Page = () => {
 
         ctx.translate(x, y);
 
-        ctx.rotate((-textSet.rotation * Math.PI) / 180);
-        ctx.transform(1, textSet.tiltX / 50, textSet.tiltY / 50, 1, 0, 0);
+        // Apply rotation
+        ctx.rotate((textSet.rotation * Math.PI) / 180);
+
+        // Apply 3D transforms
+        const radianX = (textSet.tiltX * Math.PI) / 180;
+        const radianY = (textSet.tiltY * Math.PI) / 180;
+        ctx.transform(1, Math.tan(radianY), -Math.tan(radianX), 1, 0, 0);
+
+        // Apply text shadow
+        if (textSet.shadowSize > 0) {
+          ctx.shadowColor = textSet.shadowColor;
+          ctx.shadowBlur = textSet.shadowSize;
+          ctx.shadowOffsetX = textSet.shadowSize / 2;
+          ctx.shadowOffsetY = textSet.shadowSize / 2;
+        }
 
         ctx.fillText(textSet.text, 0, 0);
         ctx.restore();
@@ -195,7 +269,7 @@ const Page = () => {
     bgImg.src = selectedImage || "";
   };
 
-  function triggerDownload(canvas) {
+  function triggerDownload(canvas: HTMLCanvasElement) {
     const dataUrl = canvas.toDataURL("image/png");
     const link = document.createElement("a");
     link.download = `edited_image.png`;
@@ -204,7 +278,7 @@ const Page = () => {
   }
 
   return (
-    <div className="flex flex-col ">
+    <div className="flex flex-col">
       <header className="flex items-center justify-between p-5 bg-gray-100">
         <h1 className="text-2xl font-bold">Image Editor</h1>
         <div className="flex gap-2">
@@ -271,7 +345,7 @@ const Page = () => {
               </div>
             </div>
             <div className="w-full md:w-1/2">
-              <div className=" flex  justify-between  items-center mb-3 ">
+              <div className="flex justify-between items-center mb-3">
                 <Button variant="outline" onClick={addNewTextSet}>
                   <PlusIcon className="mr-2 h-4 w-4" />
                   Add New Text Set
@@ -284,7 +358,7 @@ const Page = () => {
                 )}
               </div>
               <ScrollArea className="h-[calc(100vh-12rem)]">
-                <Accordion type="single" collapsible className=" space-y-3 ">
+                <Accordion type="single" collapsible className="space-y-3">
                   {textSets.map((textSet) => (
                     <TextCustomizer
                       key={textSet.id}
@@ -325,6 +399,4 @@ const Page = () => {
       <canvas ref={canvasRef} style={{ display: "none" }} />
     </div>
   );
-};
-
-export default Page;
+}

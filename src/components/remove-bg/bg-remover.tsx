@@ -9,22 +9,14 @@ import {
   Download,
   RefreshCw,
   Loader,
-  Search,
   Plus,
   GitCompareArrows,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import Link from "next/link";
 
 const PRESET_COLORS = [
@@ -66,10 +58,8 @@ export default function BGRemover() {
   const [compareValue, setCompareValue] = useState(100);
   const [isComparing, setIsComparing] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const compareCanvasRef = useRef<HTMLCanvasElement>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
-  const [isProcessing, setIsProcessing] = useState(false);
   const [debouncedCompareValue] = useDebounce(compareValue, 200);
 
   const handleFileChange = useCallback(
@@ -87,7 +77,6 @@ export default function BGRemover() {
         setResult(null);
         setBlurAmount(0);
         setIsComparing(false);
-        setIsProcessing(true);
         handleRemoveBackground(selectedFile);
       }
     },
@@ -357,7 +346,7 @@ export default function BGRemover() {
                         <Loader className="animate-spin" />
                       </p>
                     </div>
-                    {loading && (
+                    {loading && imageUrl && (
                       <img src={imageUrl} alt="" className=" bg-contain " />
                     )}
                   </div>
