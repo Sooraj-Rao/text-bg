@@ -10,7 +10,4 @@ export interface TextSet {
   opacity: number;
   shadowColor: string;
   shadowSize: number;
-  rotation: number;
-  tiltX: number;
-  tiltY: number;
 }

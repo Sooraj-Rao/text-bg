@@ -22,9 +22,6 @@ interface TextSet {
   opacity: number;
   shadowColor: string;
   shadowSize: number;
-  rotation: number;
-  tiltX: number;
-  tiltY: number;
 }
 
 export default function Page() {
@@ -119,9 +116,6 @@ export default function Page() {
         opacity: 1,
         shadowColor: "rgba(0, 0, 0, 0.8)",
         shadowSize: 4,
-        rotation: 0,
-        tiltX: 0,
-        tiltY: 0,
       },
     ]);
   };
@@ -144,65 +138,6 @@ export default function Page() {
   const removeTextSet = (id: number) => {
     setTextSets((prev) => prev.filter((set) => set.id !== id));
   };
-
-  // const saveCompositeImage = () => {
-  //   if (!canvasRef.current || !isImageSetupDone) return;
-
-  //   const canvas = canvasRef.current;
-  //   const ctx = canvas.getContext("2d");
-  //   if (!ctx) return;
-
-  //   const bgImg = new window.Image();
-  //   bgImg.crossOrigin = "anonymous";
-  //   bgImg.onload = () => {
-  //     canvas.width = bgImg.width;
-  //     canvas.height = bgImg.height;
-
-  //     ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-
-  //     textSets.forEach((textSet) => {
-  //       ctx.save();
-
-  //       const fontSize = textSet.fontSize;
-  //       ctx.font = `${textSet.bold} ${fontSize}px ${textSet.fontFamily}`;
-  //       ctx.fillStyle = textSet.color;
-  //       ctx.globalAlpha = textSet.opacity;
-  //       ctx.textAlign = "center";
-  //       ctx.textBaseline = "middle";
-
-  //       const x = (canvas.width * (textSet.left + 50)) / 100;
-  //       const y = (canvas.height * (50 - textSet.top)) / 100;
-
-  //       ctx.translate(x, y);
-
-  //       ctx.rotate((-textSet.rotation * Math.PI) / 180);
-  //       ctx.transform(
-  //         1,
-  //         Math.tan((textSet.tiltY * Math.PI) / 180),
-  //         Math.tan((textSet.tiltX * Math.PI) / 180),
-  //         1,
-  //         0,
-  //         0
-  //       );
-
-  //       ctx.fillText(textSet.text, 0, 0);
-  //       ctx.restore();
-  //     });
-
-  //     if (removedBgImageUrl) {
-  //       const removedBgImg = new window.Image();
-  //       removedBgImg.crossOrigin = "anonymous";
-  //       removedBgImg.onload = () => {
-  //         ctx.drawImage(removedBgImg, 0, 0, canvas.width, canvas.height);
-  //         triggerDownload(canvas);
-  //       };
-  //       removedBgImg.src = removedBgImageUrl;
-  //     } else {
-  //       triggerDownload(canvas);
-  //     }
-  //   };
-  //   bgImg.src = selectedImage || "";
-  // };
 
   const saveCompositeImage = () => {
     if (!canvasRef.current || !isImageSetupDone) return;
@@ -235,11 +170,11 @@ export default function Page() {
         ctx.translate(x, y);
 
         // Apply rotation
-        ctx.rotate((textSet.rotation * Math.PI) / 180);
+        ctx.rotate((0 * Math.PI) / 180);
 
         // Apply 3D transforms
-        const radianX = (textSet.tiltX * Math.PI) / 180;
-        const radianY = (textSet.tiltY * Math.PI) / 180;
+        const radianX = (0 * Math.PI) / 180;
+        const radianY = (0 * Math.PI) / 180;
         ctx.transform(1, Math.tan(radianY), -Math.tan(radianX), 1, 0, 0);
 
         // Apply text shadow
@@ -282,9 +217,9 @@ export default function Page() {
       <header className="flex items-center justify-between p-5 bg-gray-100">
         <h1 className="text-2xl font-bold">Image Editor</h1>
         <div className="flex gap-2">
-          <Button onClick={handleUploadImage}>
+          <Button variant="link" onClick={handleUploadImage}>
             <UploadIcon className="mr-2 h-4 w-4" />
-            Upload Image
+            Upload New Image
           </Button>
         </div>
       </header>
@@ -293,7 +228,7 @@ export default function Page() {
         {selectedImage ? (
           <div className="flex flex-col md:flex-row gap-10">
             <div className="w-full md:w-1/2">
-              <div className="relative aspect-square border border-gray-200 rounded-lg overflow-hidden">
+              <div className="relative  aspect-square border border-gray-200 rounded-lg overflow-hidden">
                 <Image
                   src={selectedImage || "/placeholder.svg"}
                   alt="Uploaded"
@@ -316,10 +251,10 @@ export default function Page() {
                         left: `${textSet.left + 50}%`,
                         transform: `
                         translate(-50%, -50%) 
-                        rotate(${textSet.rotation}deg)
+                        rotate(${0}deg)
                         perspective(1000px)
-                        rotateX(${textSet.tiltX}deg)
-                        rotateY(${textSet.tiltY}deg)
+                        rotateX(${0}deg)
+                        rotateY(${0}deg)
                       `,
                         color: textSet.color,
                         textAlign: "center",
@@ -348,9 +283,9 @@ export default function Page() {
               <div className="flex justify-between items-center mb-3">
                 <Button variant="outline" onClick={addNewTextSet}>
                   <PlusIcon className="mr-2 h-4 w-4" />
-                  Add New Text Set
+                  Add New Text
                 </Button>
-                {selectedImage && (
+                {textSets.length !== 0 && (
                   <Button onClick={saveCompositeImage}>
                     <DownloadIcon className="mr-2 h-4 w-4" />
                     Save Image

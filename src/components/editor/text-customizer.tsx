@@ -15,14 +15,12 @@ import {
   Type,
   Palette,
   Move,
-  RotateCw,
-  ArrowLeftRight,
-  ArrowUpDown,
   Text,
   Bold,
   Droplet,
 } from "lucide-react";
 import type { TextSet } from "@/types/editor";
+import { FontFamilyIcon } from "@radix-ui/react-icons";
 
 interface TextCustomizerProps {
   textSet: TextSet;
@@ -41,9 +39,6 @@ const ICONS: Record<string, JSX.Element> = {
   fontSize: <Text className="h-4 w-4 text-gray-400 mr-2" />,
   bold: <Bold className="h-4 w-4 text-gray-400 mr-2" />,
   opacity: <Droplet className="h-4 w-4 text-gray-400 mr-2" />,
-  rotation: <RotateCw className="h-4 w-4 text-gray-400 mr-2" />,
-  tiltX: <ArrowLeftRight className="h-4 w-4 text-gray-400 mr-2" />,
-  tiltY: <ArrowUpDown className="h-4 w-4 text-gray-400 mr-2" />,
 };
 
 const TextCustomizer: React.FC<TextCustomizerProps> = ({
@@ -63,7 +58,6 @@ const TextCustomizer: React.FC<TextCustomizerProps> = ({
           {textSet.text}
         </AccordionTrigger>
         <AccordionContent className="p-4 space-y-5 bg-gray-50 shadow-md border dark:bg-gray-900 rounded-b-xl">
-          {/* Text Input */}
           <div>
             <Label className="text-xs font-medium text-gray-500 dark:text-gray-400">
               Text
@@ -79,55 +73,52 @@ const TextCustomizer: React.FC<TextCustomizerProps> = ({
               />
             </div>
           </div>
+          <div className="flex space-x-4 justify-between items-center">
+            <div className="w-1/2">
+              <Label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                Font
+              </Label>
+              <div className="flex items-center mt-1">
+                <FontFamilyIcon className="h-4 w-4 text-gray-400 mr-2" />
+                <select
+                  value={textSet.fontFamily}
+                  onChange={(e) =>
+                    handleAttributeChange(
+                      textSet.id,
+                      "fontFamily",
+                      e.target.value
+                    )
+                  }
+                  className="w-full mt-1 rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:ring focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                >
+                  <option value="Inter">Inter</option>
+                  <option value="Arial">Arial</option>
+                  <option value="Helvetica">Helvetica</option>
+                  <option value="Times New Roman">Times New Roman</option>
+                  <option value="Courier New">Courier New</option>
+                </select>
+              </div>
+            </div>
 
-          {/* Font Selection */}
-          <div>
-            <Label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-              Font
-            </Label>
-            <select
-              value={textSet.fontFamily}
-              onChange={(e) =>
-                handleAttributeChange(textSet.id, "fontFamily", e.target.value)
-              }
-              className="w-full mt-1 rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:ring focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-            >
-              <option value="Inter">Inter</option>
-              <option value="Arial">Arial</option>
-              <option value="Helvetica">Helvetica</option>
-              <option value="Times New Roman">Times New Roman</option>
-              <option value="Courier New">Courier New</option>
-            </select>
-          </div>
-
-          {/* Color Picker */}
-          <div>
-            <Label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-              Color
-            </Label>
-            <div className="flex items-center mt-1">
-              <Palette className="h-4 w-4 text-gray-400 mr-2" />
-              <Input
-                type="color"
-                value={textSet.color}
-                onChange={(e) =>
-                  handleAttributeChange(textSet.id, "color", e.target.value)
-                }
-                className="w-full h-8 p-1 rounded-md"
-              />
+            <div className=" w-1/2">
+              <Label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                Color
+              </Label>
+              <div className="flex items-center mt-1">
+                <Palette className="h-4 w-4 text-gray-400 mr-2" />
+                <Input
+                  type="color"
+                  value={textSet.color}
+                  onChange={(e) =>
+                    handleAttributeChange(textSet.id, "color", e.target.value)
+                  }
+                  className="w-full h-8 p-1 rounded-md"
+                />
+              </div>
             </div>
           </div>
 
-          {[
-            "left",
-            "top",
-            "fontSize",
-            "bold",
-            "opacity",
-            "rotation",
-            "tiltX",
-            "tiltY",
-          ].map((attr) => (
+          {["left", "top", "fontSize", "bold", "opacity"].map((attr) => (
             <div key={attr} className=" ">
               <div className="flex items-center capitalize">
                 {ICONS[attr]}
@@ -165,7 +156,6 @@ const TextCustomizer: React.FC<TextCustomizerProps> = ({
             </div>
           ))}
 
-          {/* Actions */}
           <div className="flex space-x-2 mt-4">
             <Button
               onClick={() => duplicateTextSet(textSet)}
