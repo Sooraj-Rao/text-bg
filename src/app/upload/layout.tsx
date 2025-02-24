@@ -1,6 +1,5 @@
 import "./globals.css";
 import type React from "react";
-import { GeistSans } from "geist/font/sans";
 
 const portfolioWebsiteUrl = "https://soorajrao.in?ref=text-bg-seo";
 const websiteUrl = "https://textbehindphoto.soorajrao.in?ref=text-bg-seo";
@@ -60,9 +59,5 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <html lang="en">
-      <body className={GeistSans.className}>{children}</body>
-    </html>
-  );
+  return { children };
 }

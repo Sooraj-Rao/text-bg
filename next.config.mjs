@@ -5,7 +5,10 @@ const nextConfig = {
   },
   swcMinify: false,
   images: {
-    domains: ["encrypted-tbn0.gstatic.com"], 
+    domains: [
+      "encrypted-tbn0.gstatic.com",
+      "hebbkx1anhila5yf.public.blob.vercel-storage.com",
+    ],
   },
 };
 
