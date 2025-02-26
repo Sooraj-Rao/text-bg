@@ -1,4 +1,3 @@
-import "./globals.css";
 import type React from "react";
 
 const portfolioWebsiteUrl = "https://soorajrao.in?ref=text-bg-seo";
@@ -54,10 +53,10 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({
+export default function Layout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
-  return { children };
+}>) {
+  return <>{children}</>;
 }
